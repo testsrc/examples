@@ -1,0 +1,56 @@
+# testsrc on three open-source players, with what an evaluation token gets: 30 different cases.
+# Public on purpose: each job's summary lists what passed and what didn't. report-only: the jobs stay green.
+name: testsrc trial set
+on:
+  push:
+    branches: [agent/trial-run]
+  workflow_dispatch:
+env:
+  # The 10 starter cases and 20 more: TESTSRC_WEEKLY in testsrc/run's examples.
+  TESTSRC_TRIAL: >-
+    starter edge/anamorphic-sar-4-3.mp4 edge/audio-starts-500ms-late.mp4
+    edge/av1-hdr10.mkv edge/hevc-yuv422.mp4 edge/low-fps-10.mp4
+    edge/mka-opus-codec-delay.mka edge/mkv-forced-not-default-subs.mkv edge/mkv-no-cues.mkv
+    edge/opus-5.1-family-1.opus edge/rotation-90-display-matrix.mp4 edge/single-frame-video.mp4
+    edge/ts-pcr-wrap.ts edge/ts-starts-at-large-pts.ts edge/tx3g-cjk.mp4
+    edge/vfr-screen-recording.mp4 edge/wav-7.1-extensible.wav dash/fmp4.mpd
+    hls/abr-ladder.m3u8 channels/5.1.mp4 scan/1080i-tff.mp4
+jobs:
+  play:
+    name: ${{ matrix.player }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - player: ffmpeg
+            packages: ffmpeg
+          - player: gstreamer
+            packages: >-
+              gstreamer1.0-tools gstreamer1.0-plugins-base gstreamer1.0-plugins-good
+              gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav
+          - player: mpv
+            packages: libmpv2 jackd2
+    steps:
+      - name: Install ${{ matrix.player }} from Ubuntu 24.04
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends ${{ matrix.packages }}
+      - name: Versions
+        run: |
+          case "${{ matrix.player }}" in
+            ffmpeg) ffmpeg -version | head -1 ;;
+            gstreamer) gst-inspect-1.0 --version | head -2 ;;
+            mpv) dpkg-query -W libmpv2 jackd2 ;;
+          esac
+      - name: The trial set, frame by frame
+        uses: testsrc/run@v1
+        with:
+          token: ${{ secrets.TESTSRC_TOKEN }}
+          player: ${{ matrix.player }}
+          set: ${{ env.TESTSRC_TRIAL }}
+          report-only: "true"
+          out: testsrc-${{ matrix.player }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: "testsrc-${{ matrix.player }}", path: "testsrc-${{ matrix.player }}/" }
