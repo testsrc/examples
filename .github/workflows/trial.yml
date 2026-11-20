@@ -1,11 +1,17 @@
-# testsrc on three open-source players, with what an evaluation token gets: 30 different cases.
+# testsrc on four open-source players, with what an evaluation token gets: 30 different cases.
 # Public on purpose: each job's summary lists what passed and what didn't. report-only: the jobs stay green.
+#
+# The players are the current stable releases, installed in Arch Linux at a pinned date of the Arch Linux Archive:
+# the same base image, date and versions as testsrc's own runner image (versions.json → runner), so a run here and
+# a run on testsrc's machine see the same libvlc, FFmpeg, GStreamer and mpv. Ubuntu 24.04's packages are older
+# (GStreamer 1.24 can't open a local HLS or DASH playlist, for one).
 name: testsrc trial set
 on:
   push:
     branches: [agent/trial-run]
   workflow_dispatch:
 env:
+  ARCH_DATE: "2026/11/01"
   # The 10 starter cases and 20 more: TESTSRC_WEEKLY in testsrc/run's examples.
   TESTSRC_TRIAL: >-
     starter edge/anamorphic-sar-4-3.mp4 edge/audio-starts-500ms-late.mp4
@@ -19,36 +25,31 @@ jobs:
   play:
     name: ${{ matrix.player }}
     runs-on: ubuntu-24.04
+    container: archlinux:base-20261025.0.616225
     strategy:
       fail-fast: false
       matrix:
         include:
+          - player: libvlc
+            packages: libvlc vlc-plugins-base vlc-plugins-extra
+            version: libvlc
           - player: ffmpeg
             packages: ffmpeg
+            version: ffmpeg
           - player: gstreamer
-            packages: >-
-              gstreamer1.0-tools gstreamer1.0-plugins-base gstreamer1.0-plugins-good
-              gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav
-            # Ubuntu 24.04's GStreamer 1.24: hlsdemux2 and dashdemux2 take only http(s) playlists ("Invalid manifest
-            # URI" on a local file), so rank them out and let the older hlsdemux and dashdemux open the local playlist.
-            gst_rank: hlsdemux2:NONE,dashdemux2:NONE
+            packages: gstreamer gst-plugins-base gst-plugins-good gst-plugins-bad gst-plugins-ugly gst-libav
+            version: gstreamer
           - player: mpv
-            packages: libmpv2 jackd2
+            packages: mpv jack2
+            version: mpv
     steps:
-      - name: Install ${{ matrix.player }} from Ubuntu 24.04
+      - name: Install ${{ matrix.player }} from the Arch Linux Archive, ${{ env.ARCH_DATE }}
         run: |
-          sudo apt-get update -qq
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends ${{ matrix.packages }}
-      - name: Versions
-        run: |
-          case "${{ matrix.player }}" in
-            ffmpeg) ffmpeg -version | head -1 ;;
-            gstreamer) gst-inspect-1.0 --version | head -2; gst-inspect-1.0 hlsdemux | head -3; gst-inspect-1.0 dashdemux | head -3 ;;
-            mpv) dpkg-query -W libmpv2 jackd2 ;;
-          esac
+          echo "Server=https://archive.archlinux.org/repos/${ARCH_DATE}/\$repo/os/\$arch" > /etc/pacman.d/mirrorlist
+          pacman -Syyuu --noconfirm --noprogressbar
+          pacman -S --noconfirm --needed --noprogressbar curl jq ca-certificates ${{ matrix.packages }}
+          pacman -Q ${{ matrix.version }}
       - name: The trial set, frame by frame
-        env:
-          GST_PLUGIN_FEATURE_RANK: ${{ matrix.gst_rank }}
         uses: testsrc/run@v1
         with:
           token: ${{ secrets.TESTSRC_TOKEN }}
