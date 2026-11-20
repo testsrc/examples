@@ -31,7 +31,7 @@ jobs:
       matrix:
         include:
           - player: libvlc
-            packages: libvlc vlc-plugins-base vlc-plugins-extra gnu-free-fonts
+            packages: libvlc vlc-plugins-base vlc-plugins-extra
             version: libvlc
           - player: ffmpeg
             packages: ffmpeg
