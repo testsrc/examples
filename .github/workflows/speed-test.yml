@@ -1,0 +1,54 @@
+# How long GitHub Actions takes to play the whole testsrc catalog through four players, with the results kept
+# private: no job summary, no annotations, no per-case lines in the log. Each shard's results are encrypted with
+# speed/public-key.pem before upload; only the holder of the private key can read them.
+name: speed-test
+on:
+  push:
+    branches: [agent/speed-test]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: speed-test
+  cancel-in-progress: true
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.m.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: m
+        run: echo "matrix=$(jq -c '{include: [.shards[] | {player, shard: .name}]}' speed/shards.json)" >> "$GITHUB_OUTPUT"
+  run:
+    needs: plan
+    name: ${{ matrix.player }} ${{ matrix.shard }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: testsrc/run
+          ref: v1
+          path: .testsrc-run
+      - name: Install ${{ matrix.player }}
+        run: bash speed/install.sh ${{ matrix.player }}
+      - name: Play the shard (output kept private)
+        env:
+          TESTSRC_TOKEN: ${{ secrets.TESTSRC_TOKEN }}
+          PLAYER: ${{ matrix.player }}
+          SHARD: ${{ matrix.shard }}
+        run: bash speed/run-shard.sh
+      - name: Encrypt the results
+        if: always()
+        run: bash speed/seal.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sealed-${{ matrix.player }}-${{ matrix.shard }}
+          path: sealed/
+          retention-days: 7
