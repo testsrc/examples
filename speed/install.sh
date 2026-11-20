@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
-# Install one player on GitHub's ubuntu-24.04 runner, as the testsrc/run README says.
+# Install one player in the job's Arch Linux container, from the Arch Linux Archive at the date testsrc's own runner
+# image pins (versions.json → runner): libvlc 3.0.24, FFmpeg 9.0.2, GStreamer 1.28.8, mpv 0.41.0. Ubuntu 24.04's
+# packages are older (its GStreamer 1.24 can't open a local HLS or DASH playlist), so they would test the setup.
 set -euo pipefail
-export DEBIAN_FRONTEND=noninteractive
 case "$1" in
-  ffmpeg)    pkgs="ffmpeg" ;;
-  libvlc)    pkgs="libvlc5 vlc-plugin-base" ;;
-  gstreamer) pkgs="gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav" ;;
-  mpv)       echo "jackd2 jackd/tweak_rt_limits boolean false" | sudo debconf-set-selections
-             pkgs="libmpv2 jackd2" ;;
+  libvlc)    pkgs="libvlc vlc-plugins-base vlc-plugins-extra"; ver=libvlc ;;
+  ffmpeg)    pkgs="ffmpeg"; ver=ffmpeg ;;
+  gstreamer) pkgs="gstreamer gst-plugins-base gst-plugins-good gst-plugins-bad gst-plugins-ugly gst-libav"; ver=gstreamer ;;
+  mpv)       pkgs="mpv jack2"; ver=mpv ;;
   *) echo "unknown player $1"; exit 2 ;;
 esac
-sudo apt-get update -qq
-sudo apt-get install -y -qq --no-install-recommends $pkgs > /dev/null
-dpkg-query -W -f='${Package} ${Version}\n' $pkgs
+echo "Server=https://archive.archlinux.org/repos/${ARCH_DATE}/\$repo/os/\$arch" > /etc/pacman.d/mirrorlist
+pacman -Syyuu --noconfirm --noprogressbar > /dev/null
+# the tools run-shard.sh and seal.sh use, then the player
+pacman -S --noconfirm --needed --noprogressbar curl jq ca-certificates openssl tar gzip gawk $pkgs > /dev/null
+pacman -Q $ver

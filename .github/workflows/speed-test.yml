@@ -1,4 +1,4 @@
-# How long GitHub Actions takes to play the whole testsrc catalog through four players, with the results kept
+# How long GitHub Actions takes to play the whole testsrc catalog through four players (in Arch, at testsrc's pinned versions), with the results kept
 # private: no job summary, no annotations, no per-case lines in the log. Each shard's results are encrypted with
 # speed/public-key.pem before upload; only the holder of the private key can read them.
 name: speed-test
@@ -8,6 +8,8 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+env:
+  ARCH_DATE: "2026/11/01"
 concurrency:
   group: speed-test
   cancel-in-progress: true
@@ -28,6 +30,8 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     runs-on: ubuntu-24.04
+    # the players at testsrc's pinned versions, in Arch (speed/install.sh says why not Ubuntu's packages)
+    container: archlinux:base-20261025.0.616225
     timeout-minutes: 355
     steps:
       - uses: actions/checkout@v4
