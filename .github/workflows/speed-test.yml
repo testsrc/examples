@@ -19,7 +19,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: m
-        run: echo "matrix=$(jq -c '{include: [.shards[] | {player, shard: .name}]}' speed/shards.json)" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "matrix=$(jq -c '{include: [.shards[] | {player, shard: .name}]}' speed/shards.json)" >> "$GITHUB_OUTPUT"
   run:
     needs: plan
     name: ${{ matrix.player }} ${{ matrix.shard }}
