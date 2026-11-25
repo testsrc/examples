@@ -26,6 +26,8 @@ jobs:
       - uses: testsrc/run@v1
         with:
           token: ${{ secrets.TESTSRC_TOKEN }}
+          # stop before the job's timeout-minutes, keeping the report of the cases that ran
+          time-limit: 15
           player: ffmpeg
           set: starter
       - uses: actions/upload-artifact@v4

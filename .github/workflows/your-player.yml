@@ -27,6 +27,8 @@ jobs:
       - uses: testsrc/run@v1
         with:
           token: ${{ secrets.TESTSRC_TOKEN }}
+          # stop before the job's timeout-minutes, keeping the report of the cases that ran
+          time-limit: 15
           player: cmd
           command: ./player/play.sh {file}
           set: starter
