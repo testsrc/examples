@@ -1,0 +1,35 @@
+# testsrc for any player, through its command line. Each case runs as `command`, with {file} replaced by the case's
+# path, in its own process; testsrc sees what the process does: exit code, crash, hang, how long it took.
+# Here the "player" is player/play.sh, a stand-in that decodes the file to the end with FFmpeg. Replace it with your
+# player, made to play to the end and exit (no window, no waiting for input), non-zero when it can't play a file.
+# To use it in your repo, copy this file to .github/workflows/testsrc.yml and add a repository secret TESTSRC_TOKEN
+# (a token from https://testsrc.com/account).
+name: your player
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule: [{ cron: "0 4 * * 1" }]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: your-player-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  testsrc:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the player   # yours: ./build.sh, cmake, cargo build...
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      - uses: testsrc/run@v1
+        with:
+          token: ${{ secrets.TESTSRC_TOKEN }}
+          player: cmd
+          command: ./player/play.sh {file}
+          set: starter
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: testsrc-your-player, path: testsrc-results/ }

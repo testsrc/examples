@@ -1,0 +1,32 @@
+# testsrc for an app that plays through libvlc: every frame, its time, orientation, aspect and colour, and the
+# audio against its beeps. To use it in your repo, copy this file to .github/workflows/testsrc.yml and add a
+# repository secret TESTSRC_TOKEN (a token from https://testsrc.com/account).
+name: libvlc
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule: [{ cron: "0 4 * * 1" }]   # Mondays: catches a new libvlc in the distribution
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: libvlc-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  testsrc:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20   # the starter set takes about two minutes
+    steps:
+      - uses: actions/checkout@v4
+      # The libvlc your app ships. Here the distribution's; for your own build, point LIBVLC at its libvlc.so.5.
+      - name: Install libvlc
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libvlc5 vlc-plugin-base
+      - uses: testsrc/run@v1
+        with:
+          token: ${{ secrets.TESTSRC_TOKEN }}
+          player: libvlc
+          set: starter   # 10 cases; or case ids and prefixes (testsrc.com/cases), or all with a company token
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: testsrc-libvlc, path: testsrc-results/ }

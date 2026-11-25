@@ -1,0 +1,33 @@
+# testsrc for a player built on FFmpeg: the same checks as libvlc's, through ffmpeg and ffprobe. To use it in your
+# repo, copy this file to .github/workflows/testsrc.yml and add a repository secret TESTSRC_TOKEN (a token from
+# https://testsrc.com/account).
+name: ffmpeg
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule: [{ cron: "0 4 * * 1" }]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ffmpeg-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  testsrc:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      # The FFmpeg your player links. Here the distribution's; for your own build, put its bin/ on PATH:
+      #   echo "$PWD/ffmpeg-build/bin" >> "$GITHUB_PATH"
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      - uses: testsrc/run@v1
+        with:
+          token: ${{ secrets.TESTSRC_TOKEN }}
+          player: ffmpeg
+          set: starter
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: testsrc-ffmpeg, path: testsrc-results/ }
