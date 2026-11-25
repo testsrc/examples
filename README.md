@@ -43,8 +43,8 @@ Paste this into Claude Code, Cursor, Codex or another coding assistant, in your 
 - The workflows run on pushes to `main`, on pull requests and every Monday, with the starter set only.
 - `player/play.sh` stands in for your player in `your-player.yml`: it decodes each file to the end with FFmpeg.
 - `libvlc.yml` runs with `report-only: true`: Ubuntu 24.04's libvlc 3.0.20 fails 3 of the 10 starter cases (the
-  last beep of `audio-only/opus.opus`, the last frame of `hls/ts.m3u8` and `hls/fmp4.m3u8`), as libvlc 3.0.24 does
-  in testsrc's own runs. Those are real findings, listed in each run's summary; the badge stays green because the
+  last beep of `audio-only/opus.opus`, the last frame of `hls/ts.m3u8` and `hls/fmp4.m3u8`). libvlc 3.0.24 fails
+  the same 3 in testsrc's own runs, `hls/fmp4.m3u8` there with its audio 47 ms early. Those are real findings, listed in each run's summary; the badge stays green because the
   job doesn't fail on them. Leave `report-only` out in your repo.
 - More inputs (case sets, `exclude`, snapshots, `report-only`): [testsrc/run](https://github.com/testsrc/run#readme).
   The API: [testsrc.com/docs/api](https://testsrc.com/docs/api).
