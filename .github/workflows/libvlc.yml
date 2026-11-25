@@ -28,7 +28,7 @@ jobs:
           player: libvlc
           set: starter   # 10 cases; or case ids and prefixes (testsrc.com/cases), or all with a company token
           # This demo only: libvlc 3.0.x really fails 3 of the starter cases (the last beep of an Opus file, the last
-          # frame of HLS over TS), so the job reports them in its summary without failing. In your repo, leave this
+          # frame of HLS), so the job reports them in its summary without failing. In your repo, leave this
           # out: a failing case should fail the job.
           report-only: true
       - uses: actions/upload-artifact@v4
