@@ -25,6 +25,8 @@ jobs:
       - uses: testsrc/run@v1
         with:
           token: ${{ secrets.TESTSRC_TOKEN }}
+          # stop before the job's timeout-minutes, keeping the report of the cases that ran
+          time-limit: 15
           player: libvlc
           set: starter   # 10 cases; or case ids and prefixes (testsrc.com/cases), or all with a company token
           # This demo only: libvlc 3.0.x really fails 3 of the starter cases (the last beep of an Opus file, the last
