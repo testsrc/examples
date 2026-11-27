@@ -46,5 +46,8 @@ Paste this into Claude Code, Cursor, Codex or another coding assistant, in your 
   last beep of `audio-only/opus.opus`, the last frame of `hls/ts.m3u8` and `hls/fmp4.m3u8`). libvlc 3.0.24 fails
   the same 3 in testsrc's own runs, `hls/fmp4.m3u8` there with its audio 47 ms early. Those are real findings, listed in each run's summary; the badge stays green because the
   job doesn't fail on them. Leave `report-only` out in your repo.
+- `ffmpeg.yml` reads `testsrc-ffmpeg.lock`, whose `expected` list holds `edge/mp3-vbr-no-xing.mp3`: without a Xing
+  header, FFmpeg estimates a VBR MP3's duration from its bitrate (5.48 s of 6). The case still runs and is reported, but
+  it doesn't fail the job; the summary says when it passes again. That's how to keep a known failure in your repo.
 - More inputs (case sets, `exclude`, snapshots, `report-only`): [testsrc/run](https://github.com/testsrc/run#readme).
   The API: [testsrc.com/docs/api](https://testsrc.com/docs/api).
