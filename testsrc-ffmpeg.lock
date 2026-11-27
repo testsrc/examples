@@ -1,0 +1,6 @@
+# ffmpeg.yml's lock file (the other examples write their own testsrc.lock). See
+# https://github.com/testsrc/run#expected-failures
+snapshot = "2026-11-13"
+expected = [
+  "edge/mp3-vbr-no-xing.mp3",  # FFmpeg estimates a VBR MP3's duration from its bitrate when there's no Xing header: 5.48 s of 6
+]
